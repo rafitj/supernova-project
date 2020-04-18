@@ -12,7 +12,13 @@ class Car(threading.Thread):
         self.atStation = True
         self.filled = False
         self.numPeople = 0
+        self.lock = threading.Condition()
         self.station = station
+
+    def run(self):
+        with self.lock:
+            self.lock.wait()
+        self.ride()
 
     def ride(self):
         print(f'{self.name} starting ride')
@@ -21,6 +27,8 @@ class Car(threading.Thread):
         self.filled = False
         self.parked = True
         self.numPeople = 0
+        with self.station.lock:
+            self.station.lock.notify()
 
     def loadPerson(self):
         self.numPeople += 1
