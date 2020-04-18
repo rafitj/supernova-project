@@ -36,17 +36,34 @@ class Station(threading.Thread):
         self.busyCars = []
         self.numCars = numCars
         self.numPpl = 0
+        self.lock = threading.Condition()
+        self.lock.acquire()
+        for car in self.cars:
+            car.start()
+
+    def run(self):
+        print(f'Running station thread')
 
     def simulate(self):
         self.start()
         for i in range(22):
             self.spawnPerson(i)
             time.sleep(randint(0, 3))
+            with self.lock:
+                print('Checking for parked cars')
+                self.lock.wait(0.1)
+                    
+                print('Done checking')
 
     def spawnPerson(self, i):
         print(f'Spawned person {i}')
         self.numPpl += 1
         self.freeCars[0].loadPerson()
         if (self.freeCars[0].filled):
+            with self.freeCars[0].lock:
+                self.freeCars[0].lock.notify()
             self.busyCars.append(self.freeCars[0])
             self.freeCars = self.freeCars[1:]
+
+
+Station(10).simulate()
