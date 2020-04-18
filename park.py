@@ -2,18 +2,17 @@ import time
 import threading
 from random import randint
 
-
 class Car(threading.Thread):
-    def __init__(self, station, num):
+    def __init__(self, station, num, carCapacity, rideTime):
         super(Car, self).__init__()
         self.name = f'Car #{num}'
         self.parked = True
-        self.capacity = 5
-        self.atStation = True
+        self.capacity = carCapacity
         self.filled = False
         self.numPeople = 0
         self.lock = threading.Condition()
         self.station = station
+        self.rideTime = rideTime
 
     def run(self):
         with self.lock:
@@ -22,7 +21,7 @@ class Car(threading.Thread):
 
     def ride(self):
         print(f'{self.name} starting ride')
-        time.sleep(2)
+        time.sleep(self.rideTime)
         print(f'{self.name} finished ride')
         self.filled = False
         self.parked = True
@@ -37,9 +36,9 @@ class Car(threading.Thread):
 
 
 class Station(threading.Thread):
-    def __init__(self, numCars):
+    def __init__(self, numCars, carCapacity, rideTime):
         super(Station, self).__init__()
-        self.cars = [Car(self, i) for i in range(numCars)]
+        self.cars = [Car(self, i,carCapacity,rideTime) for i in range(numCars)]
         self.freeCars = self.cars
         self.busyCars = []
         self.numCars = numCars
@@ -52,16 +51,20 @@ class Station(threading.Thread):
     def run(self):
         print(f'Running station thread')
 
+    def checkParking(self):
+        with self.lock:
+            print('Checking for parked cars')
+            self.lock.wait(0.1)
+            print('Done checking')
+        print('Car here')
+        self.freeCars.append(self.busyCars[0])
+        self.busyCars = self.busyCars[1:]
+
     def simulate(self):
         self.start()
         for i in range(22):
             self.spawnPerson(i)
             time.sleep(randint(0, 3))
-            with self.lock:
-                print('Checking for parked cars')
-                self.lock.wait(0.1)
-                    
-                print('Done checking')
 
     def spawnPerson(self, i):
         print(f'Spawned person {i}')
@@ -74,4 +77,11 @@ class Station(threading.Thread):
             self.freeCars = self.freeCars[1:]
 
 
-Station(10).simulate()
+class Park(self):
+    def __init__(self, numCars = 10, carCapacity = 5, rideTime = 2):
+        self.station = Station(numCars, carCapacity, rideTime)
+
+    def simulate(self):
+        self.station.simulate()
+    
+Park().simulate()
