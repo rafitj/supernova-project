@@ -9,7 +9,23 @@ class Car(threading.Thread):
         self.name = f'Car #{num}'
         self.parked = True
         self.capacity = 5
+        self.atStation = True
+        self.filled = False
+        self.numPeople = 0
+        self.station = station
 
+    def ride(self):
+        print(f'{self.name} starting ride')
+        time.sleep(2)
+        print(f'{self.name} finished ride')
+        self.filled = False
+        self.parked = True
+        self.numPeople = 0
+
+    def loadPerson(self):
+        self.numPeople += 1
+        if self.numPeople == self.capacity:
+            self.filled = True
 
 
 class Station(threading.Thread):
@@ -21,11 +37,11 @@ class Station(threading.Thread):
         self.numCars = numCars
         self.numPpl = 0
 
-    # def simulate(self):
-    #     self.start()
-    #     for i in range(22):
-    #         self.spawnPerson(i)
-    #         time.sleep(randint(0, 3))
+    def simulate(self):
+        self.start()
+        for i in range(22):
+            self.spawnPerson(i)
+            time.sleep(randint(0, 3))
 
     def spawnPerson(self, i):
         print(f'Spawned person {i}')
