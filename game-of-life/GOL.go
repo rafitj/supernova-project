@@ -20,20 +20,84 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 )
 
-// Grid world
+type Thread struct {
+	threadNum    int
+	grid         Grid
+	lock         sync.Mutex
+	area         [][]int
+	iterComplete bool
+}
 type Grid struct {
 	size       int
 	numThreads int
 	world      [][]int
+	threads    []*Thread
 }
 
 func newGrid(size int, numThreads int) *Grid {
 	grid := Grid{size: size, numThreads: numThreads}
 	grid.createWorld()
+	grid.threads = make([]*Thread, 0)
+	batchSize := size / numThreads
+	for i := 0; i < numThreads; i++ {
+		start := i * batchSize
+		end := start + batchSize
+		newThread := Thread{i, grid, sync.Mutex{}, grid.world[start:end][:]}
+		if i == numThreads-1 {
+			newThread = Thread{i, grid, sync.Mutex{}, grid.world[start:len(grid.world)][:]}
+		}
+		grid.threads = append(grid.threads, &newThread)
+	}
 	return &grid
+}
+
+func (grid *Grid) randomPopulate() {
+	for r, row := range grid.world {
+		for c := range row {
+			if rand.Float32() > 0.3 {
+				grid.world[r][c] = 0
+			} else {
+				grid.world[r][c] = 1
+			}
+
+		}
+	}
+}
+
+func (thread *Thread) checkCell(i int, j int) int {
+	if i < 0 || j < 0 || i >= thread.grid.size || j >= thread.grid.size {
+		return 0
+	}
+	return thread.grid.world[i][j]
+}
+
+func (thread *Thread) countSurrounding(i int, j int) int {
+	count := 0
+	count += thread.checkCell(i+1, j) + thread.checkCell(i+1, j+1) + thread.checkCell(i, j+1) + thread.checkCell(i-1, j+1)
+	count += thread.checkCell(i-1, j) + thread.checkCell(i-1, j-1) + thread.checkCell(i, j-1) + thread.checkCell(i+1, j-1)
+	return count
+}
+
+func (thread *Thread) updateCell(i int, j int) {
+	count := thread.countSurrounding(i, j)
+	if thread.area[i][j] == 1 && (count > 3 || count < 2) {
+		thread.grid.world[i][j] = 0
+	}
+	if thread.area[i][j] == 0 && count == 3 {
+		thread.grid.world[i][j] = 1
+	}
+}
+
+func (thread *Thread) iterate() {
+	for i := range thread.area {
+		for j := range thread.area[i] {
+			thread.updateCell(i, j)
+		}
+	}
 }
 
 func (grid *Grid) createWorld() {
@@ -42,10 +106,9 @@ func (grid *Grid) createWorld() {
 	for i := 0; i < n; i++ {
 		grid.world[i] = make([]int, n)
 	}
+	grid.randomPopulate()
 }
 
 func main() {
-	mux := sync.Mutex{}
-	fmt.Println(mux)
-	fmt.Println(newGrid(5, 1))
+	fmt.Println(newGrid(11, 5))
 }
