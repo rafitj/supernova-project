@@ -16,4 +16,36 @@
 	3) If an empty cell is surrounded by exactly 3 organisims, it gives life
 */
 
-package gol
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+// Grid world
+type Grid struct {
+	size       int
+	numThreads int
+	world      [][]int
+}
+
+func newGrid(size int, numThreads int) *Grid {
+	grid := Grid{size: size, numThreads: numThreads}
+	grid.createWorld()
+	return &grid
+}
+
+func (grid *Grid) createWorld() {
+	n := grid.size
+	grid.world = make([][]int, n)
+	for i := 0; i < n; i++ {
+		grid.world[i] = make([]int, n)
+	}
+}
+
+func main() {
+	mux := sync.Mutex{}
+	fmt.Println(mux)
+	fmt.Println(newGrid(5, 1))
+}
