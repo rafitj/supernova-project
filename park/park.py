@@ -1,6 +1,11 @@
 import time
 import threading
+import asyncio
 from random import randint
+from connection import Connection
+
+connection = Connection()
+connection.start()
 
 
 class Car(threading.Thread):
@@ -21,9 +26,9 @@ class Car(threading.Thread):
         self.ride()
 
     def ride(self):
-        print(f'{self.name} starting ride')
+        self.sendData(f'{self.name} starting ride')
         time.sleep(self.rideTime)
-        print(f'{self.name} finished ride')
+        self.sendData(f'{self.name} finished ride')
         self.filled = False
         self.parked = True
         self.numPeople = 0
@@ -34,6 +39,10 @@ class Car(threading.Thread):
         self.numPeople += 1
         if self.numPeople == self.capacity:
             self.filled = True
+
+    def sendData(self, data):
+        with connection.lock:
+            connection.stack.append(data)
 
 
 class Station(threading.Thread):
@@ -51,15 +60,15 @@ class Station(threading.Thread):
             car.start()
 
     def run(self):
-        print(f'Running station thread')
+        self.sendData(f'Running station thread')
         self.simulate()
 
     def checkParking(self):
         with self.lock:
-            print('Checking for parked cars')
+            self.sendData('Checking for parked cars')
             self.lock.wait(0.1)
-            print('Done checking')
-        print('Car here')
+            self.sendData('Done checking')
+        self.sendData('Car here')
         self.freeCars.append(self.busyCars[0])
         self.busyCars = self.busyCars[1:]
 
@@ -69,7 +78,7 @@ class Station(threading.Thread):
             time.sleep(randint(0, 3))
 
     def spawnPerson(self, i):
-        print(f'Spawned person {i}. Cars free: {len(self.freeCars)}. Cars busy: {len(self.busyCars)}')
+        self.sendData(f'Spawned person {i}. Cars free: {len(self.freeCars)}. Cars busy: {len(self.busyCars)}')
         self.numPpl += 1
         self.freeCars[0].loadPerson()
         if (self.freeCars[0].filled):
@@ -78,18 +87,17 @@ class Station(threading.Thread):
             self.busyCars.append(self.freeCars[0])
             self.freeCars = self.freeCars[1:]
 
+    def sendData(self, data):
+        with connection.lock:
+            connection.stack.append(data)
 
 class Park:
-    def __init__(self, numCars=10, carCapacity=5, rideTime=2):
-        self.station = Station(numCars, carCapacity, rideTime)
+    def __init__(self, numCars = 10, carCapacity = 5, rideTime = 2):
+        self.numCars=numCars
+        self.carCapacity=carCapacity
+        self.rideTime=rideTime
 
     def simulate(self):
+        self.station=Station(self.numCars,
+                               self.carCapacity, self.rideTime)
         self.station.start()
-
-
-def main():
-    Park().simulate()
-
-
-if __name__ == "__main__":
-    main()
