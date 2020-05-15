@@ -73,7 +73,7 @@ class Station(threading.Thread):
         self.busyCars = self.busyCars[1:]
 
     def simulate(self):
-        for i in range(22):
+        for i in range(100):
             self.spawnPerson(i)
             time.sleep(randint(0, 3))
 
