@@ -1,0 +1,18 @@
+.field-table tr td {
+    height: 10px;
+    border: 1px solid black;
+    width: 10px;
+}
+
+.blue {
+    background-color: blue;
+}
+
+.red {
+    background-color: red;
+}
+
+.black {
+    border: 4px solid black;
+    background-color: grey;
+}
